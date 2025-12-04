@@ -30,13 +30,6 @@ poetry install
 poetry shell
 ```
 
-## Configuration
-Set required environment variables (example):
-```bash
-export TEAMS_WEBHOOK_URL="https://outlook.office.com/webhook/..."
-export GITHUB_WEBHOOK_SECRET="your-github-secret"
-```
-
 ## Running Unit Tests
 Tests use ```pytest```. To run all tests:
 ```bash
