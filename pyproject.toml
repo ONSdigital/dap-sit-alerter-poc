@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "dap-sit-alerter-poc"
+version = "0.1.0"
+description = ""
+authors = ["Elinor <46898565+elthorne@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+flask = "^3.1.2"
+requests = "^2.32.5"
+pytest = "^9.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
