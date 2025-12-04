@@ -2,8 +2,8 @@ import logging
 
 from flask import Flask, request
 
-from handlers.incoming_request import build_teams_dependabot_card
-from handlers.outgoing_request import send_to_teams
+from src.handlers.incoming_request import build_teams_dependabot_card
+from src.handlers.outgoing_request import send_to_teams
 
 app = Flask(__name__)
 
