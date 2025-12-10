@@ -1,7 +1,6 @@
 from dataclasses import asdict
 from typing import Dict
 
-from src.models.dependabot_webhook_model import DependabotAlert
 from src.models.ms_teams_card_model import OutgoingMessageCard, Section, Fact, PotentialAction, ActionTarget
 
 
@@ -15,10 +14,11 @@ def build_teams_dependabot_card(incoming_payload: Dict):
     dependency = alert.get("dependency", {})
     package = dependency.get("package", {})
     ecosystem = package.get("ecosystem")
+    package_name = package.get("name", {})
 
     # severity_level
-    # security_advisory = alert.get("security_advisory", {})
-    # severity_level = security_advisory.get("severity", {})
+    security_advisory = alert.get("security_advisory", {})
+    severity_level = security_advisory.get("severity", {})
 
     # theme colour
     critical = "E81123" # red
@@ -28,12 +28,6 @@ def build_teams_dependabot_card(incoming_payload: Dict):
     # repository
     repository = incoming_payload.get("repository", {})
     repository_full_name = repository.get("full_name")
-
-    # refactored
-    alert = DependabotAlert.from_dict(incoming_payload)
-
-    package_name = alert.package.name
-    severity_level = alert.severity_level
 
     outgoing_payload = OutgoingMessageCard(
         summary=f"Dependabot Alert: {package_name} ({severity_level.capitalize()} severity)",
