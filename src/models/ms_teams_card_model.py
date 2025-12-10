@@ -36,12 +36,5 @@ class OutgoingMessageCard:
     title: str
     sections: List[Section]
     potential_action: List[PotentialAction]
-
-    type: str = field(default="MessageCard", metadata={"json_key": "@type"})
-    context: str = field(default="https://schema.org/extensions", metadata={"json_key": "@context"})
-
-
-@dataclass
-class ConnectorEnvelope:
-    content: OutgoingMessageCard
-    content_type: str = "application/vnd.microsoft.teams.card.o365connector"
+    # type: # str = field(default="MessageCard", metadata={"json_key": "@type"})
+    # context: str = field(default="https://schema.org/extensions", metadata={"json_key": "@context"})

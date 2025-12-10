@@ -1,7 +1,8 @@
 from dataclasses import asdict
 from typing import Dict
 
-from src.models.ms_teams_card_model import OutgoingMessageCard, Section, Fact, PotentialAction, ActionTarget
+from src.models.dependabot_webhook_model import DependabotWebhook
+from src.models.ms_teams_card_model import OutgoingMessageCard, Section, Fact, PotentialAction, ActionTarget#, ConnectorEnvelope
 
 
 def build_teams_dependabot_card(incoming_payload: Dict):
@@ -14,7 +15,7 @@ def build_teams_dependabot_card(incoming_payload: Dict):
     dependency = alert.get("dependency", {})
     package = dependency.get("package", {})
     ecosystem = package.get("ecosystem")
-    package_name = package.get("name", {})
+    # package_name = package.get("name", {})
 
     # severity_level
     security_advisory = alert.get("security_advisory", {})
@@ -29,8 +30,11 @@ def build_teams_dependabot_card(incoming_payload: Dict):
     repository = incoming_payload.get("repository", {})
     repository_full_name = repository.get("full_name")
 
+    # refactored
+    dependabot_webhook = DependabotWebhook(incoming_payload)
+
     outgoing_payload = OutgoingMessageCard(
-        summary=f"Dependabot Alert: {package_name} ({severity_level.capitalize()} severity)",
+        summary=f"Dependabot Alert: {dependabot_webhook.package_name} ({severity_level.capitalize()} severity)",
         theme_colour=critical,
         title=f"🚨 Dependabot Alert: {severity_level.capitalize()} Severity Vulnerability Detected 🚨",
         sections=[
@@ -42,7 +46,7 @@ def build_teams_dependabot_card(incoming_payload: Dict):
             Section(
                 title="**Vulnerability Details**",
                 facts=[
-                    Fact(name="Package", value=f"`{package_name}` ({ecosystem})"),
+                    Fact(name="Package", value=f"`{dependabot_webhook.package_name}` ({ecosystem})"),
                     Fact(name="Severity", value=f"{severity_level.capitalize()}"),
                     Fact(name="Resolution timeframe", value="15 working days - due 31/01/2026"),
                 ]
