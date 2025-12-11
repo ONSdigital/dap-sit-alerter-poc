@@ -13,7 +13,7 @@ class DependabotAlert:
 
     @classmethod
     def from_webhook(cls, payload: Dict[str, Any]):
-        # TODO: Is defaulting to None the desired behaviour when it can't be found?
+        # TODO: Is defaulting to None the desired behaviour when fields can't be found?
         # TODO: created_date and severity_level are dependencies
         alert = payload.get("alert", {})
         dependency = alert.get("dependency", {})

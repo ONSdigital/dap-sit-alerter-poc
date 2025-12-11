@@ -73,7 +73,6 @@ class TeamsCardBuilder:
 
     @staticmethod
     def _get_severity_colour(severity_level: str) -> str:
-        # TODO: Test this for defensibility
         severity_colours = {
             'critical': 'E81123',   # red
             'high': 'F7630C',       # strong orange
