@@ -60,7 +60,7 @@ def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_
 
 @patch("src.helpers.load_sla_config")
 @patch("src.services.teams_card_builder.TeamsCardBuilder._get_deadline_date")
-def test_format_resolution_deadline_date_returns_expected_string(mock_get_due, mock_load_sla, incoming_github_dependabot_webhook):
+def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_sla, incoming_github_dependabot_webhook):
     # arrange
     incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
