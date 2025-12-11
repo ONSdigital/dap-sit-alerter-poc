@@ -58,14 +58,15 @@ def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_
     assert result == expected_date_to_resolve
 
 
-
-@patch("src.teams_card_builder.TeamsCardBuilder._load_sla_config")
-@patch("src.teams_card_builder.TeamsCardBuilder._get_deadline_date")
+@patch("src.helpers.load_sla_config")
+@patch("src.services.teams_card_builder.TeamsCardBuilder._get_deadline_date")
 def test_format_resolution_deadline_date_returns_expected_string(mock_get_due, mock_load_sla, incoming_github_dependabot_webhook):
     # arrange
     incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
-    card = TeamsCardBuilder()
+
+    config = load_sla_config()
+    card = TeamsCardBuilder(config)
 
     mock_load_sla.return_value={"critical": 5}
     mock_get_due.return_value=date(2025, 12, 31)
@@ -79,7 +80,7 @@ def test_format_resolution_deadline_date_returns_expected_string(mock_get_due, m
 
 def test_build_card_returns_expected_payload(incoming_github_dependabot_webhook, outgoing_microsoft_connector_card):
     # arrange
-    config = load_sla_config("../../dependabot_sla.yml")
+    config = load_sla_config()
     card = TeamsCardBuilder(config)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
