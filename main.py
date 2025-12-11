@@ -21,8 +21,10 @@ def webhook():
     # TODO: Refactor - handler pattern
     alert = DependabotAlert.from_webhook(payload)
 
-    # TODO: Configure output channel, i.e., Teams, Slack, email, fax, etc
+    # TODO: Defensive programming.  Values cannot be 0/null/None, etc, and test it
     sla_config = load_sla_config()
+
+    # TODO: Configure output channel, i.e., Teams, Slack, email, fax, etc
     teams_card_builder = TeamsCardBuilder(sla_config)
     teams_card = teams_card_builder.build_card(alert)
 
