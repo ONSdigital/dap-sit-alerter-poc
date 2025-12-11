@@ -1,7 +1,7 @@
 import pytest
 
 from unittest.mock import patch
-from datetime import datetime, date
+from datetime import date
 
 from src.models.dependabot_alert_model import DependabotAlert
 from src.services.teams_card_builder import TeamsCardBuilder
@@ -52,7 +52,7 @@ def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_
     card = TeamsCardBuilder
 
     # act
-    result = card._get_deadline_date(start_date= datetime.date(2025, 12, 25), days=days_to_resolve)
+    result = card._get_deadline_date(start_date= date(2025, 12, 25), days=days_to_resolve)
 
     # assert
     assert result == expected_date_to_resolve
@@ -68,7 +68,7 @@ def test_format_resolution_deadline_date_returns_expected_string(mock_get_due, m
     card = TeamsCardBuilder()
 
     mock_load_sla.return_value={"critical": 5}
-    mock_get_due.return_value=datetime.date(2025, 12, 31)
+    mock_get_due.return_value=date(2025, 12, 31)
 
     # act
     result = card._get_formatted_deadline_string(alert)
