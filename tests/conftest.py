@@ -86,7 +86,7 @@ def outgoing_microsoft_connector_card():
           "@type": "MessageCard",
           "@context": "https://schema.org/extensions",
           "summary": "Dependabot Alert: lodash (High severity)",
-          "themeColour": "E81123",
+          "themeColour": "F7630C",
           "title": "🚨 Dependabot Alert: High Severity Vulnerability Detected 🚨",
           "sections": [
             {
@@ -107,7 +107,7 @@ def outgoing_microsoft_connector_card():
                 },
                 {
                   "name": "Resolution timeframe",
-                  "value": "15 working days - due 31/01/2026"
+                  "value": "15 working days - due 16/02/2026"
                 },
               ],
             },
