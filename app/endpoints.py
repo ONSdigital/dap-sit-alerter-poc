@@ -24,7 +24,7 @@ def add_header(response):
 
 @incoming.route('/health', methods=['GET'])
 def health():
-    return jsonify({'status': 'healthy'}), 200
+    return jsonify({'healthy': True}), 200
 
 
 @incoming.route('/webhook', methods=['POST'])

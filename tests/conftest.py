@@ -1,4 +1,8 @@
+from typing import Dict
+
 import pytest
+
+from app.app import setup_app
 
 
 @pytest.fixture
@@ -78,6 +82,7 @@ def incoming_github_dependabot_webhook():
       }
     }
 
+
 @pytest.fixture
 def outgoing_microsoft_connector_card():
     return {
@@ -132,3 +137,13 @@ def outgoing_microsoft_connector_card():
           ]
         }
     }
+
+
+@pytest.fixture
+def app():
+    return setup_app()
+
+
+@pytest.fixture
+def client(app):
+    return app.test_client()

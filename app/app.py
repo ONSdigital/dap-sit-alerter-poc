@@ -11,7 +11,7 @@ def setup_app():
         raise ValueError('TEAMS_CONNECTOR_URL environment variable is required')
 
     app = Flask(__name__)
+    app.register_blueprint(incoming)
     app.config['TEAMS_CONNECTOR_URL'] = teams_url
 
-    app.register_blueprint(incoming)
     return app
