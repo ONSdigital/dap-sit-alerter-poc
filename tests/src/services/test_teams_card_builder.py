@@ -227,6 +227,7 @@ def test_build_card_sections_returns_expected_structure():
 
     repository_section, vulnerability_section, links_section = result
 
+    # TODO: Refactor :eyes:
     # --- Section 1: Repository Info ---
     assert "activityTitle" in repository_section
     assert "**Repository:** your-org/your-repo" in repository_section["activityTitle"]
