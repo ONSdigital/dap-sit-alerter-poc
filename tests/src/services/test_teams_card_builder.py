@@ -227,19 +227,15 @@ def test_build_card_sections_returns_expected_structure():
 
     repository_section, vulnerability_section, links_section = result
 
-    # TODO: Refactor :eyes:
-    # --- Section 1: Repository Info ---
     assert "activityTitle" in repository_section
     assert "**Repository:** your-org/your-repo" in repository_section["activityTitle"]
     assert repository_section["activitySubtitle"] == "Dependabot has detected a new vulnerability"
     assert repository_section["activityImage"].startswith("https://github.githubassets.com")
 
-    # --- Section 2: Vulnerability Details ---
     assert vulnerability_section["title"] == "**Vulnerability Details**"
     assert isinstance(vulnerability_section["facts"], list)
     assert len(vulnerability_section["facts"]) >= 3
 
-    # --- Section 3: Links ---
     assert links_section["title"] == "Useful Links"
     assert isinstance(links_section["facts"], list)
     assert len(links_section["facts"]) == 1
