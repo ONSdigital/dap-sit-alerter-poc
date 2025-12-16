@@ -2,7 +2,6 @@ import os
 
 from flask import Flask
 
-# from app.auth import auth
 from app.endpoints import incoming
 
 
@@ -13,7 +12,6 @@ def setup_app():
 
     app = Flask(__name__)
     app.config['TEAMS_CONNECTOR_URL'] = teams_url
-    # app.auth = auth
 
     app.register_blueprint(incoming)
     return app
