@@ -30,6 +30,12 @@ poetry install
 poetry shell
 ```
 
+4. Create a '.env' file in the project root, and add the Microsoft Teams webhook URL:
+```bash
+TEAMS_CONNECTOR_URL=https://example.com/test-webhook
+```
+**Note:** Do not commit `.env` Git. Do not pass Go. Do not collect £200. `.env` is already included in `.gitignore`
+
 ## Running Unit Tests
 Tests use ```pytest```. To run all tests:
 ```bash
