@@ -1,37 +1,15 @@
 import logging
 import os
-from dataclasses import dataclass
-from typing import Dict
 
 from flask import abort, Request
 
 from app.auth import verify_github_signature, verify_github_event
 from src.helpers import load_slo_config
 from src.dependabot.dependabot_alert_model import DependabotAlert
+from src.response_model import Response
+from src.slo_config_model import SLOConfig
 from src.teams.teams_card_builder import TeamsCardBuilder
 from src.teams.teams_notifier import send_to_teams
-
-
-class Response:
-    def __init__(self, status: int, body: str):
-        self.status = status
-        self.body = body
-
-
-# TODO: Extract dis
-@dataclass
-class SLOConfig:
-    slo_days: Dict[str, int]
-
-    def __post_init__(self):
-        if not isinstance(self.slo_days, dict) or not self.slo_days:
-            raise ValueError("slo_days must be a non-empty dictionary")
-
-        for priority, days in self.slo_days.items():
-            if not isinstance(priority, str) or not priority.strip():
-                raise ValueError(f"Invalid priority key {priority}. Priority must be a string")
-            if not isinstance(days, int) or days <= 0:
-                raise ValueError(f"Invalid days key {days} for priority {priority}. Days must be a positive integer")
 
 
 class DependabotHandler:
