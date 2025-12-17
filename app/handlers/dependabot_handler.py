@@ -27,6 +27,8 @@ class DependabotHandler:
 
         # arrange
         payload = payload.json
+        if not payload:
+            return Response(400, "Empty JSON payload")
 
         # validate action
         action = payload.get("action", "NOT FOUND")
