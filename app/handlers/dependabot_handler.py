@@ -1,12 +1,13 @@
 import os
 
-from flask import abort
+from flask import abort, Request
 
 from app.auth import verify_github_signature, verify_github_event
 from src.helpers import load_sla_config
 from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.services.outgoing import send_to_teams
 from src.teams.teams_card_builder import TeamsCardBuilder
+from src.teams.teams_notifier import send_to_teams
+
 
 class Response:
     def __init__(self, status: int, body: str):
@@ -15,7 +16,7 @@ class Response:
 
 
 class DependabotHandler:
-    def handle_webhook(self, payload) -> Response:
+    def handle_webhook(self, payload: Request, teams_connector_url: str) -> Response:
         # security
         secret = os.environ.get('GITHUB_WEBHOOK_SECRET')
         if not verify_github_signature(secret):
@@ -40,7 +41,7 @@ class DependabotHandler:
         teams_card = teams_card_builder.build_card(alert)
 
         # send to Teams
-        success = send_to_teams(teams_card)
+        success = send_to_teams(teams_card, teams_connector_url)
 
         if not success:
             return Response(400, f"Failed to send alert to Teams")
