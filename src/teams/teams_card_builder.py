@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta
 from typing import Dict, Any
 
-from src.models.dependabot_alert_model import DependabotAlert
+from src.dependabot.dependabot_alert_model import DependabotAlert
 
 
 class TeamsCardBuilder:

@@ -4,9 +4,9 @@ from flask import abort
 
 from app.auth import verify_github_signature, verify_github_event
 from src.helpers import load_sla_config
-from src.models.dependabot_alert_model import DependabotAlert
+from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.services.outgoing import send_to_teams
-from src.services.teams_card_builder import TeamsCardBuilder
+from src.teams.teams_card_builder import TeamsCardBuilder
 
 class Response:
     def __init__(self, status: int, body: str):

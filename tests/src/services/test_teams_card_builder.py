@@ -3,8 +3,8 @@ import pytest
 from unittest.mock import patch
 from datetime import date
 
-from src.models.dependabot_alert_model import DependabotAlert
-from src.services.teams_card_builder import TeamsCardBuilder
+from src.dependabot.dependabot_alert_model import DependabotAlert
+from src.teams.teams_card_builder import TeamsCardBuilder
 from src.helpers import load_sla_config
 
 
@@ -54,7 +54,7 @@ def test_get_severity_colour_returns_expected_hex_colour(severity_level, expecte
 
 
 @patch("src.helpers.load_sla_config")
-@patch("src.services.teams_card_builder.TeamsCardBuilder._get_deadline_date")
+@patch("src.teams.teams_card_builder.TeamsCardBuilder._get_deadline_date")
 def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_sla, incoming_github_dependabot_webhook):
     # arrange
     incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"

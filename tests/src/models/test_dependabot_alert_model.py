@@ -1,4 +1,4 @@
-from src.models.dependabot_alert_model import DependabotAlert
+from src.dependabot.dependabot_alert_model import DependabotAlert
 
 
 def test_dependabot_alert_returns_expected_package_name(incoming_github_dependabot_webhook):
