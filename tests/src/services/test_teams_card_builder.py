@@ -4,7 +4,7 @@ from unittest.mock import patch
 from datetime import date
 
 from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.helpers import load_slo_config
+from src.models.slo_config_model import load_slo_config
 from src.teams.teams_card_builder import TeamsCardBuilder
 
 
@@ -54,7 +54,7 @@ def test_get_severity_colour_returns_expected_hex_colour(severity_level, expecte
     assert result == expected_hex
 
 
-@patch("src.helpers.load_slo_config")
+@patch("src.models.slo_config_model.load_slo_config")
 @patch("src.teams.teams_card_builder.TeamsCardBuilder._get_deadline_date")
 def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_slo, incoming_github_dependabot_webhook):
     # arrange

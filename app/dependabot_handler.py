@@ -4,10 +4,9 @@ import os
 from flask import abort, Request
 
 from app.auth import verify_github_signature, verify_github_event
-from src.helpers import load_slo_config
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.models.response_model import Response
-from src.models.slo_config_model import SLOConfig
+from src.models.slo_config_model import load_slo_config
 from src.teams.teams_card_builder import TeamsCardBuilder
 from src.teams.teams_notifier import send_to_teams
 
@@ -32,10 +31,9 @@ class DependabotHandler:
         if action not in ["auto_reopened", "created", "reintroduced", "reopened"]:
             return Response(204, f"Action {action} not processed")
 
-        # load config
+        # load SLO config
         try:
-            raw_config = load_slo_config()
-            slo_config = SLOConfig(**raw_config)
+            slo_config = load_slo_config()
         except Exception as err:
             logging.error(f"Invalid SLO config: {err}")
             return Response(500, "Invalid SLO config")
