@@ -6,8 +6,8 @@ from flask import abort, Request
 from app.auth import verify_github_signature, verify_github_event
 from src.helpers import load_slo_config
 from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.response_model import Response
-from src.slo_config_model import SLOConfig
+from src.models.response_model import Response
+from src.models.slo_config_model import SLOConfig
 from src.teams.teams_card_builder import TeamsCardBuilder
 from src.teams.teams_notifier import send_to_teams
 
