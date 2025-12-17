@@ -241,4 +241,3 @@ def test_build_card_sections_returns_expected_structure():
     assert isinstance(links_section["facts"], list)
     assert len(links_section["facts"]) == 1
     assert "View in GitHub" in links_section["facts"][0]["value"]
-
