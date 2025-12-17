@@ -25,9 +25,13 @@ class DependabotHandler:
         if not verify_github_event():
             abort(401, description="Unauthorised")
 
+        # arrange
         payload = payload.json
 
-        # validate action, i.e., created, reopened, fixed, etc
+        # validate action
+        action = payload.get("action", "NOT FOUND")
+        if action not in ["auto_reopened", "created", "reintroduced", "reopened"]:
+            return Response(204, f"Action {action} not processed")
 
         # load config
         # TODO: Defensive programming.  Values cannot be 0/null/None, etc, and test it
