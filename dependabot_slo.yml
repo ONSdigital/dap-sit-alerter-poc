@@ -1,4 +1,4 @@
-sla_days:
+slo_days:
   critical: 5
   high: 15
   medium: 60

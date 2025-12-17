@@ -1,6 +1,6 @@
 # DAP SIT Alerter POC
 
-POC middleware to forward GitHub Dependabot alerts to Microsoft Teams with automated SLA tracking.
+POC middleware to forward GitHub Dependabot alerts to Microsoft Teams with automated slo tracking.
 
 ## Features
 * Receives GitHub Dependabot webhook events

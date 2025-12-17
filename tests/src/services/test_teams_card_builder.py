@@ -4,13 +4,14 @@ from unittest.mock import patch
 from datetime import date
 
 from src.dependabot.dependabot_alert_model import DependabotAlert
+from src.helpers import load_slo_config
 from src.teams.teams_card_builder import TeamsCardBuilder
-from src.helpers import load_sla_config
+
 
 
 def test_build_card_returns_expected_payload(incoming_github_dependabot_webhook, outgoing_microsoft_connector_card):
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
@@ -53,17 +54,17 @@ def test_get_severity_colour_returns_expected_hex_colour(severity_level, expecte
     assert result == expected_hex
 
 
-@patch("src.helpers.load_sla_config")
+@patch("src.helpers.load_slo_config")
 @patch("src.teams.teams_card_builder.TeamsCardBuilder._get_deadline_date")
-def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_sla, incoming_github_dependabot_webhook):
+def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_slo, incoming_github_dependabot_webhook):
     # arrange
     incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
 
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
-    mock_load_sla.return_value={"critical": 5}
+    mock_load_slo.return_value={"critical": 5}
     mock_get_due.return_value=date(2025, 12, 31)
 
     # act
@@ -75,7 +76,7 @@ def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, moc
 
 def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is_invalid():
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
     alert = DependabotAlert(
         severity_level="BUTTERNUT_CRINKLEFRIES!!!",
@@ -139,7 +140,7 @@ def test_get_deadline_date_skips_weekends():
 )
 def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_empty_fields(package_name, package_ecosystem, expected_package_field):
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
     alert = DependabotAlert(
@@ -162,7 +163,7 @@ def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_em
 
 def test_build_useful_links_returns_expected_markdown():
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
     alert = DependabotAlert(
@@ -185,7 +186,7 @@ def test_build_useful_links_returns_expected_markdown():
 
 def test_build_card_sections_handles_missing_or_malformed_fields():
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
     alert = DependabotAlert(
@@ -207,7 +208,7 @@ def test_build_card_sections_handles_missing_or_malformed_fields():
 
 def test_build_card_sections_returns_expected_structure():
     # arrange
-    config = load_sla_config()
+    config = load_slo_config()
     card = TeamsCardBuilder(config)
 
     alert = DependabotAlert(

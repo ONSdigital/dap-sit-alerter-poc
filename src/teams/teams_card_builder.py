@@ -5,9 +5,9 @@ from src.dependabot.dependabot_alert_model import DependabotAlert
 
 
 class TeamsCardBuilder:
-    def __init__(self, sla_config: Dict[str, int]) -> None:
+    def __init__(self, slo_config: Dict[str, int]) -> None:
         # TODO: Defensive programming and test
-        self.sla_config = sla_config
+        self.slo_config = slo_config
 
     def build_card(self, alert: DependabotAlert) -> Dict[str, Any]:
         return {
@@ -62,10 +62,10 @@ class TeamsCardBuilder:
         created_date = created_date_input.date()
 
         severity_level = alert.severity_level.lower()
-        if severity_level not in self.sla_config:
+        if severity_level not in self.slo_config:
             raise ValueError(f"Unknown severity level: {severity_level}")
 
-        working_days = self.sla_config[severity_level]
+        working_days = self.slo_config[severity_level]
 
         due_date = self._get_deadline_date(created_date, working_days)
 

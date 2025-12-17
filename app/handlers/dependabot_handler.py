@@ -6,7 +6,7 @@ from typing import Dict
 from flask import abort, Request
 
 from app.auth import verify_github_signature, verify_github_event
-from src.helpers import load_sla_config
+from src.helpers import load_slo_config
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.teams.teams_card_builder import TeamsCardBuilder
 from src.teams.teams_notifier import send_to_teams
@@ -20,14 +20,14 @@ class Response:
 
 # TODO: Extract dis
 @dataclass
-class SLAConfig:
-    sla_days: Dict[str, int]
+class SLOConfig:
+    slo_days: Dict[str, int]
 
     def __post_init__(self):
-        if not isinstance(self.sla_days, dict) or not self.sla_days:
-            raise ValueError("SLAs must have keys 'days'")
+        if not isinstance(self.slo_days, dict) or not self.slo_days:
+            raise ValueError("SLOs must have keys 'days'")
 
-        for priority, days in self.sla_days.items():
+        for priority, days in self.slo_days.items():
             if not isinstance(priority, str) or not priority.strip():
                 raise ValueError(f"Invalid priority key {priority}. Priority must be a string")
             if not isinstance(days, int) or days <= 0:
@@ -56,17 +56,17 @@ class DependabotHandler:
 
         # load config
         try:
-            raw_config = load_sla_config()
-            sla_config = SLAConfig(**raw_config)
+            raw_config = load_slo_config()
+            slo_config = SLOConfig(**raw_config)
         except Exception as err:
-            logging.error(f"Invalid SLA config: {err}")
-            return Response(500, "Invalid SLA config")
+            logging.error(f"Invalid SLO config: {err}")
+            return Response(500, "Invalid SLO config")
 
         # parse alert
         alert = DependabotAlert.from_webhook(payload)
 
         # build Teams card
-        teams_card_builder = TeamsCardBuilder(sla_config)
+        teams_card_builder = TeamsCardBuilder(slo_config)
         teams_card = teams_card_builder.build_card(alert)
 
         # send to Teams
