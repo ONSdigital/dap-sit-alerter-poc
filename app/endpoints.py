@@ -2,7 +2,7 @@ import logging
 
 from flask import Blueprint, jsonify, request, current_app
 
-from app.handlers.dependabot_handler import DependabotHandler
+from app.dependabot_handler import DependabotHandler
 
 
 incoming = Blueprint("endpoints", __name__)
