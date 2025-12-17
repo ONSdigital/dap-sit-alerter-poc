@@ -51,4 +51,4 @@ class DependabotHandler:
         if not success:
             return Response(400, f"Failed to send alert to Teams")
 
-        return Response(200, f"Alert {alert.alert_number} sent to Teams")
+        return "OK", 200

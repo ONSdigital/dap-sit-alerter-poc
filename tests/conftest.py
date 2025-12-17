@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pytest
 
 from app.app import setup_app
