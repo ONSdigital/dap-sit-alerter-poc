@@ -1,4 +1,7 @@
+import logging
 import os
+from dataclasses import dataclass
+from typing import Dict
 
 from flask import abort, Request
 
@@ -13,6 +16,21 @@ class Response:
     def __init__(self, status: int, body: str):
         self.status = status
         self.body = body
+
+
+@dataclass
+class SLAConfig:
+    sla_days: Dict[str, int]
+
+    def __post_init__(self):
+        if not isinstance(self.sla_days, dict) or not self.sla_days:
+            raise ValueError("SLAs must have keys 'days'")
+
+        for priority, days in self.sla_days.items():
+            if not isinstance(priority, str) or not priority.strip():
+                raise ValueError(f"Invalid priority key {priority}. Priority must be a string")
+            if not isinstance(days, int) or days <= 0:
+                raise ValueError(f"Invalid days key {days} for priority {priority}. Days must be a positive integer")
 
 
 class DependabotHandler:
@@ -36,8 +54,12 @@ class DependabotHandler:
             return Response(204, f"Action {action} not processed")
 
         # load config
-        # TODO: Defensive programming.  Values cannot be 0/null/None, etc, and test it
-        sla_config = load_sla_config()
+        try:
+            raw_config = load_sla_config()
+            sla_config = SLAConfig(**raw_config)
+        except Exception as err:
+            logging.error(f"Invalid SLA config: {err}")
+            return Response(500, "Invalid SLA config")
 
         # parse alert
         alert = DependabotAlert.from_webhook(payload)
