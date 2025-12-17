@@ -25,7 +25,7 @@ class SLOConfig:
 
     def __post_init__(self):
         if not isinstance(self.slo_days, dict) or not self.slo_days:
-            raise ValueError("SLOs must have keys 'days'")
+            raise ValueError("slo_days must be a non-empty dictionary")
 
         for priority, days in self.slo_days.items():
             if not isinstance(priority, str) or not priority.strip():
