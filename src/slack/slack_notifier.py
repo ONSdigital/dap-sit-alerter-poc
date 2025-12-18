@@ -1,6 +1,6 @@
 import logging
 
-from src.notifier_base import Notifier
+from src.factories.notifier_base import Notifier
 
 
 class SlackNotifier(Notifier):

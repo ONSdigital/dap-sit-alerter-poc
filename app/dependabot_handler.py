@@ -6,9 +6,9 @@ from flask.typing import ResponseReturnValue
 
 from app.auth import verify_github_secret, verify_github_event
 from src.dependabot.dependabot_alert_model import DependabotAlert
+from src.factories.notifier_factory import NotifierFactory
 from src.models.slo_config_model import load_slo_config
-from src.teams.teams_notifier import TeamsNotifier
-from src.teams.teams_payload_builder import TeamsPayloadBuilder
+from src.factories.payload_factory import PayloadBuilderFactory
 
 
 class DependabotHandler:
@@ -32,10 +32,8 @@ class DependabotHandler:
         # build Teams payload
         teams_payload = TeamsPayloadBuilder(self.slo_config).build_payload(alert)
 
-        # TODO: To be extracted behind a configureable notifier interface
-        # send to Teams
-        notifier = TeamsNotifier()
-        if not notifier.send(teams_payload, teams_connector_url):
+        notifier = NotifierFactory.get_notifier("teams")
+        if not notifier.send(payload, teams_connector_url):
             return jsonify({"error": f"Failed to send alert to Teams"}), 502
 
         return jsonify({"status": "ok"}), 200

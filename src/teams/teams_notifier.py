@@ -1,4 +1,4 @@
-from src.notifier_base import Notifier
+from src.factories.notifier_base import Notifier
 
 
 class TeamsNotifier(Notifier):

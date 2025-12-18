@@ -2,9 +2,10 @@ from datetime import datetime, date, timedelta
 from typing import Dict, Any
 
 from src.dependabot.dependabot_alert_model import DependabotAlert
+from src.factories.payload_builder_base import PayloadBuilder
 
 
-class TeamsPayloadBuilder:
+class TeamsPayloadBuilder(PayloadBuilder):
     def __init__(self, slo_config: Dict[str, int]) -> None:
         # TODO: Defensive programming and test
         self.slo_config = slo_config
