@@ -41,6 +41,7 @@ class DependabotHandler:
         # parse alert
         alert = DependabotAlert.from_webhook(payload)
 
+        # TODO: To be extracted behind a configureable notifier interface
         # build Teams card
         teams_card_builder = TeamsCardBuilder(slo_config)
         teams_card = teams_card_builder.build_card(alert)
