@@ -5,23 +5,24 @@ from datetime import date
 
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.models.slo_config_model import load_slo_config
-from src.teams.teams_card_builder import TeamsCardBuilder
+from src.teams.teams_payload_builder import TeamsPayloadBuilder
 
 
 
-def test_build_card_returns_expected_payload(incoming_github_dependabot_webhook, outgoing_microsoft_connector_card):
+def test_build_teams_payload_returns_expected_payload(incoming_github_dependabot_webhook,
+                                                      outgoing_microsoft_connector_card_payload):
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload = TeamsPayloadBuilder(config)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
 
     # act
-    result = card.build_card(alert)
+    result = payload.build_payload(alert)
 
     # assert
-    assert result == outgoing_microsoft_connector_card
+    assert result == outgoing_microsoft_connector_card_payload
 
 
 @pytest.mark.parametrize(
@@ -45,30 +46,30 @@ def test_build_card_returns_expected_payload(incoming_github_dependabot_webhook,
 )
 def test_get_severity_colour_returns_expected_hex_colour(severity_level, expected_hex):
     # arrange
-    card = TeamsCardBuilder
+    payload_builder = TeamsPayloadBuilder
 
     # act
-    result = card._get_severity_colour(severity_level)
+    result = payload_builder._get_severity_colour(severity_level)
 
     # assert
     assert result == expected_hex
 
 
 @patch("src.models.slo_config_model.load_slo_config")
-@patch("src.teams.teams_card_builder.TeamsCardBuilder._get_deadline_date")
+@patch("src.teams.teams_payload_builder.TeamsPayloadBuilder._get_deadline_date")
 def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_slo, incoming_github_dependabot_webhook):
     # arrange
     incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
 
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
 
     mock_load_slo.return_value={"critical": 5}
     mock_get_due.return_value=date(2025, 12, 31)
 
     # act
-    result = card._get_formatted_deadline_string(alert)
+    result = payload_builder._get_formatted_deadline_string(alert)
 
     # assert
     assert result == "5 working days - due 31/12/2025"
@@ -77,7 +78,7 @@ def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, moc
 def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is_invalid():
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
     alert = DependabotAlert(
         severity_level="BUTTERNUT_CRINKLEFRIES!!!",
         package_name="lodash",
@@ -89,7 +90,7 @@ def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is
 
     # act & assert
     with pytest.raises(ValueError) as exception_info:
-        card._get_formatted_deadline_string(alert)
+        payload_builder._get_formatted_deadline_string(alert)
 
     assert str(exception_info.value) == "Unknown severity level: butternut_crinklefries!!!"
 
@@ -105,10 +106,10 @@ def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is
 )
 def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_to_resolve):
     # arrange
-    card = TeamsCardBuilder
+    payload_builder = TeamsPayloadBuilder
 
     # act
-    result = card._get_deadline_date(start_date= date(2025, 12, 25), days=days_to_resolve)
+    result = payload_builder._get_deadline_date(start_date= date(2025, 12, 25), days=days_to_resolve)
 
     # assert
     assert result == expected_date_to_resolve
@@ -116,13 +117,13 @@ def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_
 
 def test_get_deadline_date_skips_weekends():
     # arrange
-    card = TeamsCardBuilder
+    payload_builder = TeamsPayloadBuilder
     friday = date(2025, 12, 26)
     monday = date(2025, 12, 29)
     days_to_resolve = 1
 
     # act
-    result = card._get_deadline_date(start_date= friday, days=days_to_resolve)
+    result = payload_builder._get_deadline_date(start_date= friday, days=days_to_resolve)
 
     # assert
     assert result == monday
@@ -141,7 +142,7 @@ def test_get_deadline_date_skips_weekends():
 def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_empty_fields(package_name, package_ecosystem, expected_package_field):
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
 
     alert = DependabotAlert(
         severity_level="high",
@@ -153,7 +154,7 @@ def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_em
     )
 
     # act
-    package_details = card._build_vulnerability_details(alert)
+    package_details = payload_builder._build_vulnerability_details(alert)
     result = package_details[0]
 
     # assert
@@ -164,7 +165,7 @@ def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_em
 def test_build_useful_links_returns_expected_markdown():
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
 
     alert = DependabotAlert(
         dependabot_url="https://github.com/bondadonk/cumbernoodle/security/dependabot/100",
@@ -176,7 +177,7 @@ def test_build_useful_links_returns_expected_markdown():
     )
 
     # act
-    useful_links = card._build_useful_links(alert)
+    useful_links = payload_builder._build_useful_links(alert)
     result = useful_links[0]
 
     # assert
@@ -184,10 +185,10 @@ def test_build_useful_links_returns_expected_markdown():
     assert result["value"] == "[View in GitHub](https://github.com/bondadonk/cumbernoodle/security/dependabot/100)"
 
 
-def test_build_card_sections_handles_missing_or_malformed_fields():
+def test_build_payload_sections_handles_missing_or_malformed_fields():
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
 
     alert = DependabotAlert(
         package_name="",
@@ -199,17 +200,17 @@ def test_build_card_sections_handles_missing_or_malformed_fields():
     )
 
     # act
-    result = card._build_card_sections(alert)
+    result = payload_builder._build_payload_sections(alert)
 
     # assert
     assert isinstance(result, list)
     assert len(result) == 3
 
 
-def test_build_card_sections_returns_expected_structure():
+def test_build_payload_sections_returns_expected_structure():
     # arrange
     config = load_slo_config()
-    card = TeamsCardBuilder(config)
+    payload_builder = TeamsPayloadBuilder(config)
 
     alert = DependabotAlert(
         package_name="lodash",
@@ -221,7 +222,7 @@ def test_build_card_sections_returns_expected_structure():
     )
 
     # act
-    result = card._build_card_sections(alert)
+    result = payload_builder._build_payload_sections(alert)
 
     # assert
     assert len(result) == 3

@@ -16,7 +16,7 @@ def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
                 patch.object(DependabotHandler, "_verify_security"),
                 patch("app.dependabot_handler.load_slo_config", return_value={"slo": "config"}),
                 patch("app.dependabot_handler.DependabotAlert.from_webhook", return_value=MagicMock()),
-                patch("app.dependabot_handler.TeamsCardBuilder"),
+                patch("app.dependabot_handler.TeamsPayloadBuilder"),
                 patch("app.dependabot_handler.send_to_teams", return_value=send_to_teams_result),
             ):
                 return test_func(*args, **kwargs)
@@ -215,11 +215,11 @@ def test_handle_webhook_returns_successful_response(
 @patch.object(DependabotHandler, "_is_valid_action", return_value=True)
 @patch.object(DependabotHandler, "_load_slo_config", return_value=True)
 @patch("app.dependabot_handler.DependabotAlert.from_webhook")
-@patch("app.dependabot_handler.TeamsCardBuilder")
+@patch("app.dependabot_handler.TeamsPayloadBuilder")
 @patch("app.dependabot_handler.TeamsNotifier.send", return_value=True)
 def test_handle_webhook_calls_call_dependencies_when_successful(
     mock_send_to_teams,
-    mock_card_builder_cls,
+    mock_teams_payload_builder_cls,
     mock_from_webhook,
     mock_load_slo_config,
     mock_is_valid_action,
@@ -231,13 +231,13 @@ def test_handle_webhook_calls_call_dependencies_when_successful(
     # arrange
     fake_slo_config = MagicMock()
     fake_alert = MagicMock()
-    fake_card = {"card": "data"}
+    fake_teams_payload = {"payload": "data"}
 
     handler.slo_config = fake_slo_config
     mock_from_webhook.return_value = fake_alert
 
-    card_builder = mock_card_builder_cls.return_value
-    card_builder.build_card.return_value = fake_card
+    teams_payload_builder = mock_teams_payload_builder_cls.return_value
+    teams_payload_builder.build_payload.return_value = fake_teams_payload
 
     # act
     handler.handle_webhook(valid_payload, "connector-url")
@@ -248,7 +248,7 @@ def test_handle_webhook_calls_call_dependencies_when_successful(
     mock_load_slo_config.assert_called_once()
 
     mock_from_webhook.assert_called_once_with(valid_payload.json)
-    mock_card_builder_cls.assert_called_once_with(fake_slo_config)
-    card_builder.build_card.assert_called_once_with(fake_alert)
+    mock_teams_payload_builder_cls.assert_called_once_with(fake_slo_config)
+    teams_payload_builder.build_payload.assert_called_once_with(fake_alert)
 
-    mock_send_to_teams.assert_called_once_with(fake_card, "connector-url")
+    mock_send_to_teams.assert_called_once_with(fake_teams_payload, "connector-url")

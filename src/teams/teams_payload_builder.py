@@ -4,12 +4,12 @@ from typing import Dict, Any
 from src.dependabot.dependabot_alert_model import DependabotAlert
 
 
-class TeamsCardBuilder:
+class TeamsPayloadBuilder:
     def __init__(self, slo_config: Dict[str, int]) -> None:
         # TODO: Defensive programming and test
         self.slo_config = slo_config
 
-    def build_card(self, alert: DependabotAlert) -> Dict[str, Any]:
+    def build_payload(self, alert: DependabotAlert) -> Dict[str, Any]:
         return {
             "contentType": "application/vnd.microsoft.teams.card.o365connector",
             "content": {
@@ -18,12 +18,12 @@ class TeamsCardBuilder:
                 "summary": f"Dependabot Alert: {alert.package_name} ({alert.severity_level.capitalize()} severity)",
                 "themeColour": f"{self._get_severity_colour(alert.severity_level)}",
                 "title": f"🚨 Dependabot Alert: {alert.severity_level.capitalize()} Severity Vulnerability Detected 🚨",
-                "sections": self._build_card_sections(alert),
+                "sections": self._build_payload_sections(alert),
                 "potentialAction": self._build_potential_actions(alert)
             }
         }
 
-    def _build_card_sections(self, alert: DependabotAlert) -> list[dict[str, str]]:
+    def _build_payload_sections(self, alert: DependabotAlert) -> list[dict[str, str]]:
         return [
             {
                 "activityTitle": f"**Repository:** {alert.repository_fullname}",

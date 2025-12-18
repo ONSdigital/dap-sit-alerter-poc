@@ -82,7 +82,7 @@ def incoming_github_dependabot_webhook():
 
 
 @pytest.fixture
-def outgoing_microsoft_connector_card():
+def outgoing_microsoft_connector_card_payload():
     return {
         "contentType": "application/vnd.microsoft.teams.card.o365connector",
         "content": {

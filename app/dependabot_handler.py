@@ -7,7 +7,7 @@ from flask.typing import ResponseReturnValue
 from app.auth import verify_github_secret, verify_github_event
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.models.slo_config_model import load_slo_config
-from src.teams.teams_card_builder import TeamsCardBuilder
+from src.teams.teams_payload_builder import TeamsPayloadBuilder
 from src.teams.teams_notifier import send_to_teams
 
 
@@ -21,8 +21,8 @@ class SlackNotifier(Notifier):
 
 class TeamsNotifier(Notifier):
     @staticmethod
-    def send(card: dict, connector_url: str) -> bool:
-        return send_to_teams(card, connector_url)
+    def send(payload: dict, connector_url: str) -> bool:
+        return send_to_teams(payload, connector_url)
 
 
 class DependabotHandler:
@@ -43,13 +43,13 @@ class DependabotHandler:
         alert = DependabotAlert.from_webhook(payload)
 
         # TODO: To be extracted behind a factory
-        # build Teams card
-        teams_card = TeamsCardBuilder(self.slo_config).build_card(alert)
+        # build Teams payload
+        teams_payload = TeamsPayloadBuilder(self.slo_config).build_payload(alert)
 
         # TODO: To be extracted behind a configureable notifier interface
         # send to Teams
         notifier = TeamsNotifier()
-        if not notifier.send(teams_card, teams_connector_url):
+        if not notifier.send(teams_payload, teams_connector_url):
             return jsonify({"error": f"Failed to send alert to Teams"}), 502
 
         return jsonify({"status": "ok"}), 200
