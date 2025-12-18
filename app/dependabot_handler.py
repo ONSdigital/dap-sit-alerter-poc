@@ -7,22 +7,8 @@ from flask.typing import ResponseReturnValue
 from app.auth import verify_github_secret, verify_github_event
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.models.slo_config_model import load_slo_config
+from src.teams.teams_notifier import TeamsNotifier
 from src.teams.teams_payload_builder import TeamsPayloadBuilder
-from src.teams.teams_notifier import send_to_teams
-
-
-class Notifier:
-    pass
-
-
-class SlackNotifier(Notifier):
-    pass
-
-
-class TeamsNotifier(Notifier):
-    @staticmethod
-    def send(payload: dict, connector_url: str) -> bool:
-        return send_to_teams(payload, connector_url)
 
 
 class DependabotHandler:

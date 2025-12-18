@@ -17,7 +17,7 @@ def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
                 patch("app.dependabot_handler.load_slo_config", return_value={"slo": "config"}),
                 patch("app.dependabot_handler.DependabotAlert.from_webhook", return_value=MagicMock()),
                 patch("app.dependabot_handler.TeamsPayloadBuilder"),
-                patch("app.dependabot_handler.send_to_teams", return_value=send_to_teams_result),
+                patch("src.teams.teams_notifier.TeamsNotifier.send", return_value=send_to_teams_result),
             ):
                 return test_func(*args, **kwargs)
 
