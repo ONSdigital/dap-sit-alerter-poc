@@ -28,9 +28,9 @@ class DependabotHandler:
 
         alert = DependabotAlert.from_webhook(payload)
 
-        # TODO: To be extracted behind a factory
-        # build Teams payload
-        teams_payload = TeamsPayloadBuilder(self.slo_config).build_payload(alert)
+        # TODO: Remove hard-coded notifier and payload values
+        payload_builder = PayloadBuilderFactory.get_payload_builder("teams", self.slo_config)
+        payload = payload_builder.build_payload(alert)
 
         notifier = NotifierFactory.get_notifier("teams")
         if not notifier.send(payload, teams_connector_url):

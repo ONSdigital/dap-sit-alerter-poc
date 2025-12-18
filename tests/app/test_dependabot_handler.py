@@ -8,6 +8,7 @@ from werkzeug.exceptions import Unauthorized
 from app.dependabot_handler import DependabotHandler
 
 
+# TODO: Code smell
 def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
     def decorator(test_func):
         @wraps(test_func)
@@ -16,8 +17,10 @@ def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
                 patch.object(DependabotHandler, "_verify_security"),
                 patch("app.dependabot_handler.load_slo_config", return_value={"slo": "config"}),
                 patch("app.dependabot_handler.DependabotAlert.from_webhook", return_value=MagicMock()),
-                patch("app.dependabot_handler.TeamsPayloadBuilder"),
-                patch("src.teams.teams_notifier.TeamsNotifier.send", return_value=send_to_teams_result),
+                patch("src.factories.payload_factory.PayloadBuilderFactory.get_payload_builder",
+                      return_value=MagicMock(build_payload=MagicMock(return_value={"card": "mock"}))),
+                patch("src.factories.notifier_factory.NotifierFactory.get_notifier",
+                      return_value=MagicMock(send=MagicMock(return_value=send_to_teams_result))),
             ):
                 return test_func(*args, **kwargs)
 
@@ -210,16 +213,16 @@ def test_handle_webhook_returns_successful_response(
     assert json.loads(response.data) == {"status": "ok"}
 
 
-# TODO: Code smell
+# TODO: Massive code smell
 @patch.object(DependabotHandler, "_verify_security")
 @patch.object(DependabotHandler, "_is_valid_action", return_value=True)
 @patch.object(DependabotHandler, "_load_slo_config", return_value=True)
 @patch("app.dependabot_handler.DependabotAlert.from_webhook")
-@patch("app.dependabot_handler.TeamsPayloadBuilder")
-@patch("app.dependabot_handler.TeamsNotifier.send", return_value=True)
-def test_handle_webhook_calls_call_dependencies_when_successful(
-    mock_send_to_teams,
-    mock_teams_payload_builder_cls,
+@patch("src.factories.payload_factory.PayloadBuilderFactory.get_payload_builder")
+@patch("src.factories.notifier_factory.NotifierFactory.get_notifier")
+def test_handle_webhook_calls_all_dependencies_when_successful(
+    mock_get_notifier,
+    mock_get_payload_builder,
     mock_from_webhook,
     mock_load_slo_config,
     mock_is_valid_action,
@@ -231,13 +234,18 @@ def test_handle_webhook_calls_call_dependencies_when_successful(
     # arrange
     fake_slo_config = MagicMock()
     fake_alert = MagicMock()
-    fake_teams_payload = {"payload": "data"}
+    fake_payload = {"payload": "data"}
 
     handler.slo_config = fake_slo_config
     mock_from_webhook.return_value = fake_alert
 
-    teams_payload_builder = mock_teams_payload_builder_cls.return_value
-    teams_payload_builder.build_payload.return_value = fake_teams_payload
+    payload_builder_instance = MagicMock()
+    payload_builder_instance.build_payload.return_value = fake_payload
+    mock_get_payload_builder.return_value = payload_builder_instance
+
+    notifier_instance = MagicMock()
+    notifier_instance.send.return_value = True
+    mock_get_notifier.return_value = notifier_instance
 
     # act
     handler.handle_webhook(valid_payload, "connector-url")
@@ -248,7 +256,8 @@ def test_handle_webhook_calls_call_dependencies_when_successful(
     mock_load_slo_config.assert_called_once()
 
     mock_from_webhook.assert_called_once_with(valid_payload.json)
-    mock_teams_payload_builder_cls.assert_called_once_with(fake_slo_config)
-    teams_payload_builder.build_payload.assert_called_once_with(fake_alert)
+    mock_get_payload_builder.assert_called_once_with("teams", fake_slo_config)
+    payload_builder_instance.build_payload.assert_called_once_with(fake_alert)
 
-    mock_send_to_teams.assert_called_once_with(fake_teams_payload, "connector-url")
+    mock_get_notifier.assert_called_once_with("teams")
+    notifier_instance.send.assert_called_once_with(fake_payload, "connector-url")
