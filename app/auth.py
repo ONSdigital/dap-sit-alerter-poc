@@ -1,4 +1,4 @@
-def verify_github_signature(secret):
+def verify_github_secret(secret):
     if not secret:
         return False
     return True

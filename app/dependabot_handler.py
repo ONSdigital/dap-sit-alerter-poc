@@ -4,52 +4,72 @@ import os
 from flask import abort, Request, jsonify
 from flask.typing import ResponseReturnValue
 
-from app.auth import verify_github_signature, verify_github_event
+from app.auth import verify_github_secret, verify_github_event
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.models.slo_config_model import load_slo_config
 from src.teams.teams_card_builder import TeamsCardBuilder
 from src.teams.teams_notifier import send_to_teams
 
 
+class Notifier:
+    pass
+
+
+class SlackNotifier(Notifier):
+    pass
+
+
+class TeamsNotifier(Notifier):
+    @staticmethod
+    def send(card: dict, connector_url: str) -> bool:
+        return send_to_teams(card, connector_url)
+
+
 class DependabotHandler:
     def handle_webhook(self, payload: Request, teams_connector_url: str) -> ResponseReturnValue:
-        # security
-        secret = os.environ.get('GITHUB_WEBHOOK_SECRET')
-        if not verify_github_signature(secret):
-            abort(401, description="Unauthorised")
+        self._verify_security()
 
-        if not verify_github_event():
-            abort(401, description="Unauthorised")
-
-        # arrange
         payload = payload.json
         if not payload:
             return jsonify({"error": "Empty JSON payload"}), 400
 
-        # validate action
         action = payload.get("action", "NOT FOUND")
-        if action not in ["auto_reopened", "created", "reintroduced", "reopened"]:
+        if not self._is_valid_action(action):
             return jsonify({"status": "ignored", "reason": f"Action {action} not processed"}), 202
 
-        # load SLO config
-        try:
-            slo_config = load_slo_config()
-        except Exception as err:
-            logging.error(f"Invalid SLO config: {err}")
+        if not self._load_slo_config():
             return jsonify({"error": "Invalid SLO config"}), 500
 
-        # parse alert
         alert = DependabotAlert.from_webhook(payload)
 
-        # TODO: To be extracted behind a configureable notifier interface
+        # TODO: To be extracted behind a factory
         # build Teams card
-        teams_card_builder = TeamsCardBuilder(slo_config)
-        teams_card = teams_card_builder.build_card(alert)
+        teams_card = TeamsCardBuilder(self.slo_config).build_card(alert)
 
+        # TODO: To be extracted behind a configureable notifier interface
         # send to Teams
-        success = send_to_teams(teams_card, teams_connector_url)
-
-        if not success:
+        notifier = TeamsNotifier()
+        if not notifier.send(teams_card, teams_connector_url):
             return jsonify({"error": f"Failed to send alert to Teams"}), 502
 
         return jsonify({"status": "ok"}), 200
+
+    @staticmethod
+    def _verify_security():
+        secret = os.environ.get('GITHUB_WEBHOOK_SECRET')
+        if not verify_github_secret(secret):
+            abort(401, description="Unauthorised")
+        if not verify_github_event():
+            abort(401, description="Unauthorised")
+
+    @staticmethod
+    def _is_valid_action(action: str) -> bool:
+        return action in ["auto_reopened", "created", "reintroduced", "reopened"]
+
+    def _load_slo_config(self) -> bool:
+        try:
+            self.slo_config = load_slo_config()
+            return True
+        except Exception as err:
+            logging.error(f"Invalid SLO config: {err}")
+            return False
