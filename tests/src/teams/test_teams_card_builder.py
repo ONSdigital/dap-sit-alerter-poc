@@ -46,7 +46,7 @@ def test_build_teams_payload_returns_expected_payload(incoming_github_dependabot
 )
 def test_get_severity_colour_returns_expected_hex_colour(severity_level, expected_hex):
     # arrange
-    payload_builder = TeamsPayloadBuilder
+    payload_builder = TeamsPayloadBuilder(slo_config={})
 
     # act
     result = payload_builder._get_severity_colour(severity_level)
@@ -86,6 +86,7 @@ def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is
         repository_fullname="your-org/your-repo",
         created_date="2025-12-11T12:00:00Z",
         dependabot_url="https://github.com/your-org/your-repo/security/dependabot/42",
+        repository_url="https://github.com/your-org/your-repo",
     )
 
     # act & assert
@@ -106,7 +107,7 @@ def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is
 )
 def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_to_resolve):
     # arrange
-    payload_builder = TeamsPayloadBuilder
+    payload_builder = TeamsPayloadBuilder(slo_config={})
 
     # act
     result = payload_builder._get_deadline_date(start_date= date(2025, 12, 25), days=days_to_resolve)
@@ -117,7 +118,7 @@ def test_get_deadline_date_returns_expected_date(days_to_resolve, expected_date_
 
 def test_get_deadline_date_skips_weekends():
     # arrange
-    payload_builder = TeamsPayloadBuilder
+    payload_builder = TeamsPayloadBuilder(slo_config={})
     friday = date(2025, 12, 26)
     monday = date(2025, 12, 29)
     days_to_resolve = 1
@@ -151,6 +152,7 @@ def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_em
         repository_fullname="your-org/your-repo",
         created_date="2025-12-11T12:00:00Z",
         dependabot_url="https://github.com/your-org/your-repo/security/dependabot/42",
+        repository_url="https://github.com/your-org/your-repo",
     )
 
     # act
@@ -174,6 +176,7 @@ def test_build_useful_links_returns_expected_markdown():
         package_ecosystem="npm",
         repository_fullname="your-org/your-repo",
         created_date="2025-12-11T12:00:00Z",
+        repository_url="https://github.com/bondadonk/cumbernoodle",
     )
 
     # act
@@ -195,6 +198,7 @@ def test_build_payload_sections_handles_missing_or_malformed_fields():
         package_ecosystem="",
         repository_fullname="",
         dependabot_url="",
+        repository_url="",
         created_date="2025-12-11T12:00:00Z",
         severity_level="high",
     )
@@ -217,6 +221,7 @@ def test_build_payload_sections_returns_expected_structure():
         package_ecosystem="npm",
         repository_fullname="your-org/your-repo",
         dependabot_url="https://github.com/org/repo/security/1",
+        repository_url="https://github.com/org/repo",
         created_date="2025-12-11T12:00:00Z",
         severity_level="high",
     )

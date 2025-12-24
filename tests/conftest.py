@@ -138,6 +138,75 @@ def outgoing_microsoft_connector_card_payload():
 
 
 @pytest.fixture
+def outgoing_slack_payload():
+  return {
+  "channel": "C0123456789", # Slack channel ID
+  "text": "🚨 Dependabot Alert: lodash (High severity)",
+  "blocks": [
+    {
+      "type": "header",
+      "text": {
+        "type": "plain_text",
+        "text": "🚨 Dependabot Alert: High Severity Vulnerability Detected 🚨",
+        "emoji": True
+      }
+    },
+    {
+      "type": "section",
+      "text": {
+        "type": "mrkdwn",
+        "text": "*Repository:* <https://github.com/your-org/your-repo|your-org/your-repo>\n*Detected by:* Dependabot"
+      },
+      "accessory": {
+        "type": "image",
+        "image_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+        "alt_text": "GitHub"
+      }
+    },
+    {
+      "type": "divider"
+    },
+    {
+      "type": "section",
+      "fields": [
+        {
+          "type": "mrkdwn",
+          "text": "*Package*\n`lodash` (npm)"
+        },
+        {
+          "type": "mrkdwn",
+          "text": "*Severity*\n*High*"
+        },
+      ]
+    },
+    {
+      "type": "actions",
+      "elements": [
+        {
+          "type": "button",
+          "style": "danger",
+          "text": {
+            "type": "plain_text",
+            "text": "View Alert in GitHub"
+          },
+          "url": "https://github.com/your-org/your-repo/security/dependabot/42"
+        }
+      ]
+    },
+    {
+      "type": "context",
+      "elements": [
+        {
+          "type": "mrkdwn",
+          "text": "Resolution timeframe: 15 working days - due 16/02/2026"
+        }
+      ]
+    }
+  ]
+}
+
+
+@pytest.fixture
 def app():
     return setup_app()
 

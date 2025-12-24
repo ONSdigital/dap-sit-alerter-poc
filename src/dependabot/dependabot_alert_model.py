@@ -10,6 +10,7 @@ class DependabotAlert:
     package_ecosystem: str
     created_date: str
     dependabot_url: str
+    repository_url: str
 
     @classmethod
     def from_webhook(cls, payload: Dict[str, Any]):
@@ -18,9 +19,7 @@ class DependabotAlert:
         alert = payload.get("alert", {})
         dependency = alert.get("dependency", {})
         package = dependency.get("package", {})
-
         security_advisory = alert.get("security_advisory", {})
-
         repository = payload.get("repository", {})
 
         return cls(
@@ -30,6 +29,7 @@ class DependabotAlert:
             package_ecosystem=package.get("ecosystem"),
             created_date=alert.get("created_at"),
             dependabot_url=alert.get("html_url"),
+            repository_url=repository.get("html_url"),
         )
 
 

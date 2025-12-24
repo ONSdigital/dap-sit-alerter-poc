@@ -95,3 +95,19 @@ def test_dependabot_alert_returns_none_when_expected_dependabot_url_cannot_be_fo
 
     # assert
     assert alert.dependabot_url is None
+
+
+def test_dependabot_alert_returns_expected_repository_url(incoming_github_dependabot_webhook):
+    # arrange & act
+    alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
+
+    # assert
+    assert alert.repository_url == "https://github.com/your-org/your-repo"
+
+
+def test_dependabot_alert_returns_none_when_expected_repository_url_cannot_be_found():
+    # arrange & act
+    alert = DependabotAlert.from_webhook({})
+
+    # assert
+    assert alert.repository_url is None
