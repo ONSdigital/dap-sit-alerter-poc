@@ -5,7 +5,20 @@ from config.yaml_loader import load_yaml
 class NotificationChannelsConfig:
     def __init__(self, path: str = None):
         self.path = path or resolve_default_path("NOTIFICATION_CHANNELS_CONFIG_PATH")
+
+        # TODO: test dis
+        if self.path is None:
+            raise ValueError("No notification channels config path provided or found")
+
         self.raw = load_yaml(str(self.path))
+        self._validate()
+
+    # TODO: test dis
+    def _validate(self):
+        if self.channel_name is None:
+            raise ValueError("No enabled notification channel found")
+        if self.webhook_url is None:
+            raise ValueError(f"No webhook URL configured for channel '{self.channel_name}'")
 
     @property
     def channel_name(self):

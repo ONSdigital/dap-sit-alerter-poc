@@ -26,4 +26,4 @@ def health():
 @incoming.route('/webhook', methods=['POST'])
 def webhook():
     logging.info("Incoming GitHub webhook")
-    return DependabotHandler().handle_webhook(request, current_app.config['TEAMS_CONNECTOR_URL'])
+    return DependabotHandler().handle_webhook(request)

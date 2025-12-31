@@ -63,7 +63,5 @@ def test_webhook_calls_handle_webhook_with_the_correct_parameters(
     # assert
     mock_instance.handle_webhook.assert_called_once()
 
-    args, kwargs = mock_instance.handle_webhook.call_args
-    assert args[1] == "http://dummy-url"
     assert response.status_code == 200
     assert response.data == b"ok"

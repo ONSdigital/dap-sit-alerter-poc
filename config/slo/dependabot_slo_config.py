@@ -7,6 +7,11 @@ from config.yaml_loader import load_yaml
 class SloConfig:
     def __init__(self, path: str = None):
         self.path = path or resolve_default_path("DEPENDABOT_SLO_CONFIG_PATH")
+
+        # TODO: test dis
+        if self.path is None:
+            raise ValueError("No Service Level Objective (SLO) config path provided or found")
+
         self.raw = load_yaml(str(self.path))
         self._slo_days = self._extract_slo_days(self.raw)
         self._validate_slo_days(self._slo_days)

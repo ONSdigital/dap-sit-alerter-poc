@@ -5,14 +5,17 @@ from flask import abort, Request, jsonify
 from flask.typing import ResponseReturnValue
 
 from app.auth import verify_github_secret, verify_github_event
+from config.channels.notification_channels_config import NotificationChannelsConfig
 from config.slo.dependabot_slo_config import SloConfig
-from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.factories.notifier_factory import NotifierFactory
-from src.factories.payload_factory import PayloadBuilderFactory
+from src.dependabot.dependabot_service import DependabotService
 
 
 class DependabotHandler:
-    def handle_webhook(self, payload: Request, teams_connector_url: str) -> ResponseReturnValue:
+    def __init__(self, secret: str = None):
+        self.secret = secret or os.environ.get("GITHUB_WEBHOOK_SECRET")
+        self.valid_actions = ["auto_reopened", "created", "reintroduced", "reopened"]
+
+    def handle_webhook(self, payload: Request) -> ResponseReturnValue:
         self._verify_security()
 
         payload = payload.json
@@ -20,26 +23,25 @@ class DependabotHandler:
             return jsonify({"error": "Empty JSON payload"}), 400
 
         action = payload.get("action", "NOT FOUND")
-        if not self._is_valid_action(action):
+        if not self.is_valid_action(action):
             return jsonify({"status": "ignored", "reason": f"Action {action} not processed"}), 202
 
         try:
             slo_config = SloConfig()
+            notification_config = NotificationChannelsConfig()
         except Exception as err:
-            logging.error(f"Invalid SLO config: {err}")
-            return jsonify({"error": "Invalid SLO config"}), 500
+            logging.error(f"Config loading failed: {err}")
+            return jsonify({"error": "Invalid configuration"}), 500
 
-        alert = DependabotAlert.from_webhook(payload)
+        service = DependabotService(slo_config, notification_config)
 
-        # TODO: Remove hard-coded notifier and payload values
-        payload_builder = PayloadBuilderFactory.get_payload_builder("teams", slo_config.slo_days)
-        payload = payload_builder.build_payload(alert)
-
-        notifier = NotifierFactory.get_notifier("teams")
-        if not notifier.send(payload, teams_connector_url):
-            return jsonify({"error": f"Failed to send alert to Teams"}), 502
+        if not service.process_alert(payload):
+            return jsonify({"error": "Failed to send alert"}), 502
 
         return jsonify({"status": "ok"}), 200
+
+    def is_valid_action(self, action: str) -> bool:
+        return action in self.valid_actions
 
     @staticmethod
     def _verify_security():
@@ -49,6 +51,4 @@ class DependabotHandler:
         if not verify_github_event():
             abort(401, description="Unauthorised")
 
-    @staticmethod
-    def _is_valid_action(action: str) -> bool:
-        return action in ["auto_reopened", "created", "reintroduced", "reopened"]
+
