@@ -229,7 +229,7 @@ def config_dictionary():
     }
 
 
-# TODO: This won't work
+# TODO: This isn't future-proof. When the config changes, the tests will fail
 @pytest.fixture
 def slo_config_path():
   project_root = Path(__file__).resolve().parents[1]
