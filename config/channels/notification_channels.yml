@@ -1,0 +1,19 @@
+teams:
+  enabled: false
+  webhook_url: "${TEAMS_CONNECTOR_URL}"
+
+slack:
+  enabled: true
+  webhook_url: "${SLACK_WEBHOOK_URL}"
+
+email:
+  enabled: false
+  smtp_host: "${SMTP_HOST}"
+  smtp_port: 587
+  from_email: "${SMTP_FROM_EMAIL}"
+  to_emails:
+    - "team@example.com"
+    - "security@example.com"
+  smtp_username: "${SMTP_USERNAME}"
+  smtp_password: "${SMTP_PASSWORD}"
+  use_tls: true

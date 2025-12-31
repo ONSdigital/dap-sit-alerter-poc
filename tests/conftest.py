@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from app.app import setup_app
@@ -214,3 +216,27 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture
+def config_dictionary():
+    return {
+        "slo_days": {
+            "high": 15,
+            "medium": 10,
+            "low": 100,
+        }
+    }
+
+
+# TODO: This won't work
+@pytest.fixture
+def slo_config_path():
+  project_root = Path(__file__).resolve().parents[1]
+  return project_root / "config" / "slo" / "dependabot_slo.yml"
+
+
+@pytest.fixture
+def notification_channels_config_path():
+  project_root = Path(__file__).resolve().parents[1]
+  return project_root / "config" / "channels" / "notification_channels.yml"

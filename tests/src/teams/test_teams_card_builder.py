@@ -1,19 +1,21 @@
 import pytest
 
-from unittest.mock import patch
+from unittest.mock import MagicMock
 from datetime import date
 
+from config.slo.dependabot_slo_config import SloConfig
 from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.models.slo_config_model import load_slo_config
 from src.teams.teams_payload_builder import TeamsPayloadBuilder
-
+from tests.helpers import write_yaml
 
 
 def test_build_teams_payload_returns_expected_payload(incoming_github_dependabot_webhook,
-                                                      outgoing_microsoft_connector_card_payload):
+                                                      outgoing_microsoft_connector_card_payload, slo_config_path, tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload = TeamsPayloadBuilder(slo_config.slo_days)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
@@ -55,30 +57,33 @@ def test_get_severity_colour_returns_expected_hex_colour(severity_level, expecte
     assert result == expected_hex
 
 
-@patch("src.models.slo_config_model.load_slo_config")
-@patch("src.teams.teams_payload_builder.TeamsPayloadBuilder._get_deadline_date")
-def test_get_formatted_deadline_string_returns_expected_string(mock_get_due, mock_load_slo, incoming_github_dependabot_webhook):
+def test_get_formatted_deadline_string_returns_expected_string():
     # arrange
-    incoming_github_dependabot_webhook["alert"]["security_advisory"]["severity"] = "critical"
-    alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
+    handler = TeamsPayloadBuilder(slo_config={})
 
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    mock_alert = MagicMock()
+    mock_alert.created_date = "2025-12-01T10:00:00Z"
+    mock_alert.severity_level = "HIGH"
 
-    mock_load_slo.return_value={"critical": 5}
-    mock_get_due.return_value=date(2025, 12, 31)
+    handler.slo_config = {
+        "high": 5
+    }
+
+    handler._get_deadline_date = MagicMock(return_value=date(2025, 12, 31))
 
     # act
-    result = payload_builder._get_formatted_deadline_string(alert)
+    result = handler._get_formatted_deadline_string(mock_alert)
 
     # assert
     assert result == "5 working days - due 31/12/2025"
 
 
-def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is_invalid():
+def test_get_formatted_deadline_string_raises_value_error_when_severity_level_is_invalid(tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload_builder = TeamsPayloadBuilder(slo_config.slo_days)
     alert = DependabotAlert(
         severity_level="BUTTERNUT_CRINKLEFRIES!!!",
         package_name="lodash",
@@ -140,10 +145,12 @@ def test_get_deadline_date_skips_weekends():
         ("🔥britishname-complicated🌵", "✨bustamove cumberdance🧪", "`🔥britishname-complicated🌵` (✨bustamove cumberdance🧪)"),
     ]
 )
-def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_empty_fields(package_name, package_ecosystem, expected_package_field):
+def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_empty_fields(package_name, package_ecosystem, expected_package_field, tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload_builder = TeamsPayloadBuilder(slo_config.slo_days)
 
     alert = DependabotAlert(
         severity_level="high",
@@ -164,10 +171,12 @@ def test_build_vulnerability_details_returns_expected_payload_with_unusual_or_em
     assert result["value"] == expected_package_field
 
 
-def test_build_useful_links_returns_expected_markdown():
+def test_build_useful_links_returns_expected_markdown(tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload_builder = TeamsPayloadBuilder(slo_config.slo_days)
 
     alert = DependabotAlert(
         dependabot_url="https://github.com/bondadonk/cumbernoodle/security/dependabot/100",
@@ -188,10 +197,12 @@ def test_build_useful_links_returns_expected_markdown():
     assert result["value"] == "[View in GitHub](https://github.com/bondadonk/cumbernoodle/security/dependabot/100)"
 
 
-def test_build_payload_sections_handles_missing_or_malformed_fields():
+def test_build_payload_sections_handles_missing_or_malformed_fields(tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload_builder = TeamsPayloadBuilder(slo_config.slo_days)
 
     alert = DependabotAlert(
         package_name="",
@@ -211,10 +222,12 @@ def test_build_payload_sections_handles_missing_or_malformed_fields():
     assert len(result) == 3
 
 
-def test_build_payload_sections_returns_expected_structure():
+def test_build_payload_sections_returns_expected_structure(tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload_builder = TeamsPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload_builder = TeamsPayloadBuilder(slo_config.slo_days)
 
     alert = DependabotAlert(
         package_name="lodash",

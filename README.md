@@ -4,16 +4,27 @@ POC middleware to forward GitHub Dependabot alerts to Microsoft Teams with autom
 
 ## Features
 * Receives GitHub Dependabot webhook events
-* Converts alerts into Microsoft Teams [connector cards](https://learn.microsoft.com/en-us/microsoftteams/platform/task-modules-and-cards/cards/cards-reference#connector-card-for-microsoft-365-groups:~:text=%22whois%22%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%5D%0A%20%20%7D%0A%7D-,Connector%20card%20for%20Microsoft%20365%20Groups,-You%20can%20work)
+* Converts alerts into configurable channels such as Microsoft Teams or Slack
 * Automatically calculates resolution deadlines based on the [ONS GitHub Policy](https://officenationalstatistics.sharepoint.com/:w:/r/sites/knexPolicies/_layouts/15/Doc.aspx?sourcedoc=%7B89725180-4A87-41CA-958C-B60806E32895%7D&file=GitHub%20Usage%20Policy.docx&wdOrigin=TEAMS-MAGLEV.null_ns.rwc&action=default&mobileredirect=true) (on-net documenation, soz!)
 * Fully unit-testable Python codebase
 * Configurable via environment variables
 
-## Prerequisites
-* Python 3.12+ (or latest compatible version)
-* Poetry for dependency management
+## What is the SLO?
+The SLO (Service Level Objective) in this project defines the maximum number of days allowed to resolve a Dependabot alert based on its priority, per the [ONS GitHub Policy](https://officenationalstatistics.sharepoint.com/:w:/r/sites/knexPolicies/_layouts/15/Doc.aspx?sourcedoc=%7B89725180-4A87-41CA-958C-B60806E32895%7D&file=GitHub%20Usage%20Policy.docx&wdOrigin=TEAMS-MAGLEV.null_ns.rwc&action=default&mobileredirect=true). The SLO is configurable via the config/slo/dependabot_slo.yml file, for example:
+```yaml
+slo_days:
+  critical: 5
+  high: 15
+  medium: 60
+  moderate: 60
+  low: 90
+```
+These values indicate the number of working days to resolve alerts for each priority level.
+
+The handler uses this SLO to automatically calculate the deadlines for each incoming Dependabot alert and include them in the alert.
 
 ## Setup
+
 1. Clone the repository
 ```bash
 git clone https://github.com/your-org/dap-sit-alert-poc.git
@@ -35,6 +46,17 @@ poetry shell
 TEAMS_CONNECTOR_URL=https://example.com/test-webhook
 GITHUB_WEBHOOK_SECRET=your-webhook-secret-here
 ```
+#### Optional: Override SLO configuration location
+By default, the application loads the SLO configuration from:
+```
+config/slo/dependabot_slo.yml
+```
+
+If you need to override this, i.e., in CI, Docker or production, set:
+```
+DEPENDABOT_SLO_CONFIG_PATH=/absolute/path/to/dependabot_slo.yml
+```
+
 **Note:** Do not commit `.env` Git. Do not pass Go. Do not collect £200. `.env` is already included in `.gitignore`
 
 ## Running Unit Tests

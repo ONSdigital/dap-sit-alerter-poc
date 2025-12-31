@@ -1,4 +1,5 @@
 from functools import wraps
+from idlelib.run import Executive
 
 import pytest
 from unittest.mock import patch, MagicMock
@@ -9,13 +10,25 @@ from app.dependabot_handler import DependabotHandler
 
 
 # TODO: Code smell
-def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
+def dependabot_handler_patch_setup_helper(
+        send_to_teams_result: bool = True,
+        slo_days: dict | None = None
+):
+    if slo_days is None:
+        slo_days = {
+            "critical": 5,
+            "high": 15,
+            "medium": 60,
+        }
     def decorator(test_func):
         @wraps(test_func)
         def wrapper(*args, **kwargs):
+            mock_slo_config = MagicMock()
+            mock_slo_config.slo_days = slo_days
+
             with (
                 patch.object(DependabotHandler, "_verify_security"),
-                patch("app.dependabot_handler.load_slo_config", return_value={"slo": "config"}),
+                patch("app.dependabot_handler.SloConfig", return_value=mock_slo_config),
                 patch("app.dependabot_handler.DependabotAlert.from_webhook", return_value=MagicMock()),
                 patch("src.factories.payload_factory.PayloadBuilderFactory.get_payload_builder",
                       return_value=MagicMock(build_payload=MagicMock(return_value={"card": "mock"}))),
@@ -23,7 +36,6 @@ def dependabot_handler_patch_setup_helper(send_to_teams_result: bool = True):
                       return_value=MagicMock(send=MagicMock(return_value=send_to_teams_result))),
             ):
                 return test_func(*args, **kwargs)
-
         return wrapper
     return decorator
 
@@ -89,26 +101,19 @@ def test_handle_webhook_returns_400_when_payload_is_empty(_mock_event, _mock_sec
     assert response.json["error"] == "Empty JSON payload"
 
 
-@patch.object(DependabotHandler, "_verify_security")
-@patch.object(DependabotHandler, "_is_valid_action")
-@patch.object(DependabotHandler, "_load_slo_config")
-def test_handle_webhook_stops_processing_when_an_empty_payload_is_sent(
-        mock_load_slo_config,
-        mock_is_valid_action,
-        mock_verify_security,
-        handler,
-        app,
-):
-    # act
-    payload = MagicMock(spec=Request)
-    payload.json = {}
+def test_handle_webhook_stops_on_empty_payload(handler, app):
+    # arrange
+    handler._verify_security = MagicMock()
+    handler._is_valid_action = MagicMock()
+    mock_request = MagicMock()
+    mock_request.json = {}
 
-    handler.handle_webhook(payload, "dummy_url")
+    # act
+    handler.handle_webhook(mock_request, "dummy_url")
 
     # assert
-    mock_verify_security.assert_called_once()
-    mock_is_valid_action.assert_not_called()
-    mock_load_slo_config.assert_not_called()
+    handler._verify_security.assert_called_once()
+    handler._is_valid_action.assert_not_called()
 
 
 @patch.object(DependabotHandler, "_verify_security")
@@ -125,31 +130,27 @@ def test_handle_webhook_returns_a_202_when_action_is_invalid(_mock_verify_securi
     assert "ignored" in json.loads(response.data)["status"]
 
 
-@patch.object(DependabotHandler, "_verify_security")
-@patch.object(DependabotHandler, "_is_valid_action", return_value=False)
-@patch.object(DependabotHandler, "_load_slo_config")
-def test_handle_webhook_stops_processing_when_a_payload_action_is_ignored(
-        mock_load_slo_config,
-        mock_is_valid_action,
-        mock_verify_security,
-        handler,
-        app,
-):
+@patch("config.slo.dependabot_slo_config.SloConfig")
+def test_handle_webhook_stops_processing_when_a_payload_action_is_ignored(mock_slo_config, handler, app):
     # arrange
-    payload = MagicMock(spec=Request)
-    payload.json = {"action": "Bonkyhort Cutiebrunch"}
+    handler._verify_security = MagicMock()
+    handler._is_valid_action = MagicMock()
+    mock_request = MagicMock()
+    mock_request.json = {
+        "action": "ignored_action"
+    }
 
     # act
-    handler.handle_webhook(payload, "dummy_url")
+    handler.handle_webhook(mock_request, "dummy_url")
 
     # assert
-    mock_verify_security.assert_called_once()
-    mock_is_valid_action.assert_called_once()
-    mock_load_slo_config.assert_not_called()
+    handler._verify_security.assert_called_once()
+    handler._is_valid_action.assert_called_once_with("ignored_action")
+    mock_slo_config.assert_not_called()
 
 
 @patch.object(DependabotHandler, "_verify_security")
-@patch("app.dependabot_handler.load_slo_config", side_effect=Exception("Bumblesniff Cumberpitch is too spicy"))
+@patch("app.dependabot_handler.SloConfig", side_effect=Exception("Bumblesniff Cumberpitch is too spicy"))
 def test_load_slo_config_returns_500_when_config_is_invalid(_mock_load_slo, _mock_verify_security, handler, app, valid_payload):
     # act
     response, status_code = handler.handle_webhook(valid_payload, "dummy_url")
@@ -161,7 +162,7 @@ def test_load_slo_config_returns_500_when_config_is_invalid(_mock_load_slo, _moc
 
 @patch.object(DependabotHandler, "_verify_security")
 @patch.object(DependabotHandler, "_is_valid_action", return_value=True)
-@patch.object(DependabotHandler, "_load_slo_config", return_value=False)
+@patch("app.dependabot_handler.SloConfig")
 @patch("src.dependabot.dependabot_alert_model.DependabotAlert.from_webhook")
 def test_handle_webhook_stops_processing_when_slo_config_is_invalid(
         mock_from_webhook,
@@ -174,6 +175,7 @@ def test_handle_webhook_stops_processing_when_slo_config_is_invalid(
     # arrange
     payload = MagicMock(spec=Request)
     payload.json = {"action": "created"}
+    mock_load_slo_config.side_effect = Exception("Burberry Curdledmilk is too spicy")
 
     # act
     handler.handle_webhook(payload, "dummy_url")
@@ -214,50 +216,58 @@ def test_handle_webhook_returns_successful_response(
 
 
 # TODO: Massive code smell
-@patch.object(DependabotHandler, "_verify_security")
-@patch.object(DependabotHandler, "_is_valid_action", return_value=True)
-@patch.object(DependabotHandler, "_load_slo_config", return_value=True)
-@patch("app.dependabot_handler.DependabotAlert.from_webhook")
 @patch("src.factories.payload_factory.PayloadBuilderFactory.get_payload_builder")
 @patch("src.factories.notifier_factory.NotifierFactory.get_notifier")
+@patch("app.dependabot_handler.DependabotAlert.from_webhook")
+@patch("app.dependabot_handler.SloConfig")
 def test_handle_webhook_calls_all_dependencies_when_successful(
+    mock_slo_config,
+    mock_from_webhook,
     mock_get_notifier,
     mock_get_payload_builder,
-    mock_from_webhook,
-    mock_load_slo_config,
-    mock_is_valid_action,
-    mock_verify_security,
-    handler,
     app,
-    valid_payload
+    handler
 ):
     # arrange
-    fake_slo_config = MagicMock()
-    fake_alert = MagicMock()
-    fake_payload = {"payload": "data"}
+    handler._verify_security = MagicMock()
+    handler._is_valid_action = MagicMock(return_value=True)
 
-    handler.slo_config = fake_slo_config
-    mock_from_webhook.return_value = fake_alert
+    mock_request = MagicMock()
+    mock_request.json = {
+        "action": "created",
+        "data": "example"
+    }
 
-    payload_builder_instance = MagicMock()
-    payload_builder_instance.build_payload.return_value = fake_payload
-    mock_get_payload_builder.return_value = payload_builder_instance
+    mock_slo_instance = MagicMock()
+    mock_slo_instance.slo_days = 30
+    mock_slo_config.return_value = mock_slo_instance
 
-    notifier_instance = MagicMock()
-    notifier_instance.send.return_value = True
-    mock_get_notifier.return_value = notifier_instance
+    mock_alert = MagicMock()
+    mock_from_webhook.return_value = mock_alert
+
+    mock_payload_builder = MagicMock()
+    mock_payload_builder.build_payload.return_value = {"payload": "built"}
+    mock_get_payload_builder.return_value = mock_payload_builder
+
+    mock_notifier = MagicMock()
+    mock_notifier.send.return_value = True
+    mock_get_notifier.return_value = mock_notifier
 
     # act
-    handler.handle_webhook(valid_payload, "connector-url")
+    handler.handle_webhook(mock_request, "connector-url")
 
     # assert
-    mock_verify_security.assert_called_once()
-    mock_is_valid_action.assert_called_once_with("created")
-    mock_load_slo_config.assert_called_once()
+    handler._verify_security.assert_called_once()
+    handler._is_valid_action.assert_called_once_with("created")
+    mock_slo_config.assert_called_once()
 
-    mock_from_webhook.assert_called_once_with(valid_payload.json)
-    mock_get_payload_builder.assert_called_once_with("teams", fake_slo_config)
-    payload_builder_instance.build_payload.assert_called_once_with(fake_alert)
+    mock_from_webhook.assert_called_once_with(mock_request.json)
+
+    mock_get_payload_builder.assert_called_once_with("teams", 30)
+    mock_payload_builder.build_payload.assert_called_once_with(mock_alert)
 
     mock_get_notifier.assert_called_once_with("teams")
-    notifier_instance.send.assert_called_once_with(fake_payload, "connector-url")
+    mock_notifier.send.assert_called_once_with(
+        {"payload": "built"},
+        "connector-url"
+    )

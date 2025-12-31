@@ -5,9 +5,9 @@ from flask import abort, Request, jsonify
 from flask.typing import ResponseReturnValue
 
 from app.auth import verify_github_secret, verify_github_event
+from config.slo.dependabot_slo_config import SloConfig
 from src.dependabot.dependabot_alert_model import DependabotAlert
 from src.factories.notifier_factory import NotifierFactory
-from src.models.slo_config_model import load_slo_config
 from src.factories.payload_factory import PayloadBuilderFactory
 
 
@@ -23,13 +23,16 @@ class DependabotHandler:
         if not self._is_valid_action(action):
             return jsonify({"status": "ignored", "reason": f"Action {action} not processed"}), 202
 
-        if not self._load_slo_config():
+        try:
+            slo_config = SloConfig()
+        except Exception as err:
+            logging.error(f"Invalid SLO config: {err}")
             return jsonify({"error": "Invalid SLO config"}), 500
 
         alert = DependabotAlert.from_webhook(payload)
 
         # TODO: Remove hard-coded notifier and payload values
-        payload_builder = PayloadBuilderFactory.get_payload_builder("teams", self.slo_config)
+        payload_builder = PayloadBuilderFactory.get_payload_builder("teams", slo_config.slo_days)
         payload = payload_builder.build_payload(alert)
 
         notifier = NotifierFactory.get_notifier("teams")
@@ -49,11 +52,3 @@ class DependabotHandler:
     @staticmethod
     def _is_valid_action(action: str) -> bool:
         return action in ["auto_reopened", "created", "reintroduced", "reopened"]
-
-    def _load_slo_config(self) -> bool:
-        try:
-            self.slo_config = load_slo_config()
-            return True
-        except Exception as err:
-            logging.error(f"Invalid SLO config: {err}")
-            return False

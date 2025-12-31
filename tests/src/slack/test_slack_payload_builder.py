@@ -1,13 +1,16 @@
+from config.slo.dependabot_slo_config import SloConfig
 from src.dependabot.dependabot_alert_model import DependabotAlert
-from src.models.slo_config_model import load_slo_config
 from src.slack.slack_payload_builder import SlackPayloadBuilder
+from tests.helpers import write_yaml
 
 
 def test_build_slack_payload_returns_expected_payload(incoming_github_dependabot_webhook,
-                                                      outgoing_slack_payload):
+                                                      outgoing_slack_payload, tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload = SlackPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload = SlackPayloadBuilder(slo_config.slo_days)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
@@ -19,10 +22,12 @@ def test_build_slack_payload_returns_expected_payload(incoming_github_dependabot
     assert result == outgoing_slack_payload
 
 
-def test_build_slack_payload_returns_expected_number_and_order_of_blocks(incoming_github_dependabot_webhook):
+def test_build_slack_payload_returns_expected_number_and_order_of_blocks(incoming_github_dependabot_webhook, tmp_path, config_dictionary):
     # arrange
-    config = load_slo_config()
-    payload = SlackPayloadBuilder(config)
+    path = write_yaml(tmp_path, config_dictionary)
+    slo_config = SloConfig(path)
+
+    payload = SlackPayloadBuilder(slo_config.slo_days)
 
     incoming_github_dependabot_webhook["alert"]["created_at"] = "2026-01-26T00:00:00Z"
     alert = DependabotAlert.from_webhook(incoming_github_dependabot_webhook)
